@@ -1,124 +1,47 @@
+#pragma once
+#include <fstream>
+#include <string>
+#include <vector>
+#include "Constants.h"
 
-#include "RuntimeDump.h"
-#include <dobby.h>
-#include <jni.h>
-#include <android/log.h>
+// RuntimeDump.h
 
-#define LOG_TAG "AntigravityDump"
-#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+struct Il2CppString {
+    void* klass;
+    void* monitor;
+    int32_t length;
+    char16_t chars[1];
 
-bool RuntimeDump::g_hasDumped = false;
-
-// Function Pointer for Original OnTriggerEnter
-void (*orig_OnTriggerEnter)(void* __this, void* collider);
-
-// Hook Information
-void* g_il2cppBase = nullptr; // Needs to be set on load
-
-// Detour Function
-void hook_OnTriggerEnter(void* __this, void* collider) {
-    if (!RuntimeDump::g_hasDumped && __this != nullptr) {
-        LOGI("OnTriggerEnter captured! Starting Dump...");
-        RuntimeDump::PerformDump(__this);
-    }
-    
-    // Call Original
-    orig_OnTriggerEnter(__this, collider);
-}
-
-void RuntimeDump::Initialize() {
-    // Assuming libil2cpp.so is already loaded and we have the base address
-    // For this snippet, we assume g_il2cppBase is retrieved via /proc/self/maps or similar
-    // or we use absolute address if ASLR is disabled (unlikely).
-    // In a real Mod Menu, typically:
-    // g_il2cppBase = get_module_base("libil2cpp.so");
-    
-    // For Dobby, we need the absolute address.
-    // void* targetAddr = (void*)((uintptr_t)g_il2cppBase + OFFSET_ATTACKCOMPONENT_ONTRIGGERENTER);
-    
-    // PSEUDO: If using absolute loading in Nox static env, or standard mod template logic:
-    // DobbyHook(targetAddr, (void*)hook_OnTriggerEnter, (void**)&orig_OnTriggerEnter);
-    
-    LOGI("RuntimeDump Initialized. Waiting for Game Trigger...");
-}
-
-void RuntimeDump::PerformDump(void* attackComponent) {
-    if (g_hasDumped) return;
-
-    std::ofstream outFile(DUMP_FILE_PATH);
-    if (!outFile.is_open()) {
-        LOGI("Failed to open dump file: %s", DUMP_FILE_PATH);
-        return;
-    }
-
-    LOGI("Dump file opened. Reading memory...");
-
-    // 1. Get List
-    void* listPtr = *(void**)((uintptr_t)attackComponent + OFFSET_ATTACKCOMPONENT_ITEMLIST);
-    if (!listPtr) {
-        LOGI("itemList is null.");
-        outFile << "Error: itemList is null.\n";
-        outFile.close();
-        return;
-    }
-
-    Il2CppList* list = (Il2CppList*)listPtr;
-    int32_t size = list->size;
-    LOGI("List Size: %d", size);
-    outFile << "Item List Size: " << size << "\n";
-    outFile << "--------------------------------------------------\n";
-
-    if (size <= 0 || !list->items) {
-        outFile.close();
-        g_hasDumped = true;
-        return;
-    }
-
-    // 2. Iterate Array
-    Il2CppArray* itemsArray = (Il2CppArray*)list->items;
-    void** itemVector = (void**)((uintptr_t)itemsArray + OFFSET_ARRAY_DATA);
-
-    for (int i = 0; i < size; i++) {
-        void* item = itemVector[i];
-        if (!item) continue;
-
-        outFile << "[Item " << i << "]\n";
-        outFile << "Address: " << item << "\n";
-
-        // Read Fields
-        // Price
-        void* pricePtr = *(void**)((uintptr_t)item + OFFSET_ITEM_PRICE);
-        if (pricePtr) {
-            Il2CppString* str = (Il2CppString*)pricePtr;
-            outFile << "Price: " << str->ToString() << "\n";
+    std::string ToString() {
+        if (length <= 0) return "";
+        std::string s;
+        for (int i = 0; i < length; i++) {
+            s += (char)chars[i];
         }
-
-        // Level
-        void* levelPtr = *(void**)((uintptr_t)item + OFFSET_ITEM_LEVEL);
-        if (levelPtr) {
-            Il2CppString* str = (Il2CppString*)levelPtr;
-            outFile << "Level: " << str->ToString() << "\n";
-        }
-        
-        // Tier
-        void* tierPtr = *(void**)((uintptr_t)item + OFFSET_ITEM_TIER);
-        if (tierPtr) {
-            Il2CppString* str = (Il2CppString*)tierPtr;
-            outFile << "Tier: " << str->ToString() << "\n";
-        }
-        
-        // Description (Optional - might be long)
-        // void* descPtr = *(void**)((uintptr_t)item + OFFSET_ITEM_DESC);
-        // if (descPtr) { ... }
-
-        outFile << "--------------------------------------------------\n";
+        return s;
     }
+};
 
-    outFile << "End of Dump.\n";
-    outFile.close();
-    
-    LOGI("Dump Complete. Saved to %s", DUMP_FILE_PATH);
-    g_hasDumped = true;
+struct Il2CppList {
+    void* klass;
+    void* monitor;
+    void* items;
+    int32_t size;
+};
 
-    // Optional: Detach hook if Dobby supports it easily, or just gate via bool (done).
-}
+struct Il2CppArray {
+    void* klass;
+    void* monitor;
+    void* bounds;
+    void* max_length;
+    void* vector[1];
+};
+
+class RuntimeDump {
+public:
+    static void Initialize();
+    static void PerformDump(void* attackComponent);
+
+private:
+   static bool g_hasDumped;
+};
