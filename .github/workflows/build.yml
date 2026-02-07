@@ -14,24 +14,26 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ إعداد Java 8 (المشروع قديم وده الأنسب)
-      - name: Set up JDK 8
+      # 2️⃣ JDK 17 (مطلوب لـ sdkmanager الجديد)
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '8'
+          java-version: '17'
 
       # 3️⃣ إعداد Android SDK
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        env:
+          SKIP_JDK_VERSION_CHECK: true
 
-      # 4️⃣ إعداد NDK (متوافق مع ndk-build و Android.mk)
+      # 4️⃣ إعداد NDK (ndk-build / Android.mk)
       - name: Set up Android NDK
         uses: nttld/setup-ndk@v1
         with:
           ndk-version: r21e
 
-      # 5️⃣ إعطاء صلاحية للـ gradlew
+      # 5️⃣ صلاحيات gradlew
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
