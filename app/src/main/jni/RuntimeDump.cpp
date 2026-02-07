@@ -2,6 +2,8 @@
 #include "And64InlineHook/And64InlineHook.hpp"
 #include <jni.h>
 #include <android/log.h>
+#include "Includes/obfuscate.h"
+#include "Includes/Utils.hpp"
 #include "Includes/Macros.h"
 
 #define LOG_TAG "AntigravityDump"
