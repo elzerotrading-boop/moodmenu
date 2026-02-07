@@ -41,7 +41,5 @@ class RuntimeDump {
 public:
     static void Initialize();
     static void PerformDump(void* attackComponent);
-
-private:
-   static bool g_hasDumped;
+    static bool g_hasDumped;
 };
