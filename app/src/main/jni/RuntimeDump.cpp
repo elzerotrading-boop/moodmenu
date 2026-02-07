@@ -1,8 +1,8 @@
-
 #include "RuntimeDump.h"
-#include <dobby.h>
+#include "And64InlineHook/And64InlineHook.hpp"
 #include <jni.h>
 #include <android/log.h>
+#include "Includes/Macros.h"
 
 #define LOG_TAG "AntigravityDump"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -27,18 +27,11 @@ void hook_OnTriggerEnter(void* __this, void* collider) {
 }
 
 void RuntimeDump::Initialize() {
-    // Assuming libil2cpp.so is already loaded and we have the base address
-    // For this snippet, we assume g_il2cppBase is retrieved via /proc/self/maps or similar
-    // or we use absolute address if ASLR is disabled (unlikely).
-    // In a real Mod Menu, typically:
-    // g_il2cppBase = get_module_base("libil2cpp.so");
-    
-    // For Dobby, we need the absolute address.
-    // void* targetAddr = (void*)((uintptr_t)g_il2cppBase + OFFSET_ATTACKCOMPONENT_ONTRIGGERENTER);
-    
-    // PSEUDO: If using absolute loading in Nox static env, or standard mod template logic:
-    // DobbyHook(targetAddr, (void*)hook_OnTriggerEnter, (void**)&orig_OnTriggerEnter);
-    
+#if defined(__aarch64__)
+    // Install hook using project's HOOK macro
+    HOOK("libil2cpp.so", OFFSET_ATTACKCOMPONENT_ONTRIGGERENTER, hook_OnTriggerEnter, orig_OnTriggerEnter);
+    LOGI("RuntimeDump hook installed at 0x%X", OFFSET_ATTACKCOMPONENT_ONTRIGGERENTER);
+#endif
     LOGI("RuntimeDump Initialized. Waiting for Game Trigger...");
 }
 
@@ -106,10 +99,6 @@ void RuntimeDump::PerformDump(void* attackComponent) {
             Il2CppString* str = (Il2CppString*)tierPtr;
             outFile << "Tier: " << str->ToString() << "\n";
         }
-        
-        // Description (Optional - might be long)
-        // void* descPtr = *(void**)((uintptr_t)item + OFFSET_ITEM_DESC);
-        // if (descPtr) { ... }
 
         outFile << "--------------------------------------------------\n";
     }
@@ -119,6 +108,4 @@ void RuntimeDump::PerformDump(void* attackComponent) {
     
     LOGI("Dump Complete. Saved to %s", DUMP_FILE_PATH);
     g_hasDumped = true;
-
-    // Optional: Detach hook if Dobby supports it easily, or just gate via bool (done).
 }
