@@ -1,6 +1,6 @@
 
 #include "RuntimeDump.h"
-#include "And64InlineHook/And64InlineHook.hpp"
+#include <dobby.h>
 #include <jni.h>
 #include <android/log.h>
 
@@ -121,9 +121,4 @@ void RuntimeDump::PerformDump(void* attackComponent) {
     g_hasDumped = true;
 
     // Optional: Detach hook if Dobby supports it easily, or just gate via bool (done).
-}
-
-__attribute__((constructor))
-void runtime_dump_init() {
-    RuntimeDump::Initialize();
 }
