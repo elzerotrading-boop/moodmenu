@@ -148,6 +148,9 @@ static void hack_thread() {
     // Hook OnTriggerEnter لالتقاط AttackComponent
     HOOK(targetLibName, 0x41C3738, OnTriggerEnter_Hook, old_OnTriggerEnter);
 
+    // Initialize RuntimeDump hook (after libil2cpp.so is loaded)
+    RuntimeDump::Initialize();
+
     LOGI("Hooks installed!");
     LOGI("GetItemByName: %p", GetItemByName);
     LOGI("ApplyItem: %p", ApplyItem);
