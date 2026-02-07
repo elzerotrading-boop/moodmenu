@@ -1,4 +1,3 @@
-
 #pragma once
 #include <fstream>
 #include <string>
@@ -6,13 +5,12 @@
 #include "Constants.h"
 
 // RuntimeDump.h
-
 struct Il2CppString {
     void* klass;
     void* monitor;
     int32_t length;
     char16_t chars[1];
-
+    
     std::string ToString() {
         if (length <= 0) return "";
         std::string s;
@@ -43,7 +41,10 @@ class RuntimeDump {
 public:
     static void Initialize();
     static void PerformDump(void* attackComponent);
-
+    
+    // ✅ نقلناها من private لـ public
+    static bool g_hasDumped;
+    
 private:
-   static bool g_hasDumped;
+    // أي متغيرات خاصة تانية هنا
 };
